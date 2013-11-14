@@ -1,0 +1,37 @@
+CC=gcc
+CFLAGS=-Wall -O2 -g
+LIB=liblwp.a
+
+all : example1.exe example2.exe example3.exe example4.exe
+
+example1.exe : example1.c lwp.h $(LIB) dpmiint.S
+	$(CC) $(CFLAGS) -o example1.exe example1.c $(LIB) dpmiint.S
+
+example2.exe : example2.c lwp.h $(LIB) dpmiint.S
+	$(CC) $(CFLAGS) -o example2.exe example2.c $(LIB) dpmiint.S
+
+example3.exe : example3.c lwp.h $(LIB) dpmiint.S
+	$(CC) $(CFLAGS) -o example3.exe example3.c $(LIB) dpmiint.S
+
+example4.exe : example4.c lwp.h $(LIB) dpmiint.S
+	$(CC) $(CFLAGS) -o example4.exe example4.c $(LIB) dpmiint.S
+
+lwp.o : lwp.c lwp.h
+	$(CC) $(CFLAGS) -c lwp.c
+
+lwpasm.o : lwpasm.S
+	$(CC) $(CFLAGS) -c lwpasm.S
+
+liblwp.a : lwp.o lwpasm.o 
+	ar rcs liblwp.a lwp.o lwpasm.o 
+
+
+clean :
+	del lwp.o 
+	del lwpasm.o
+	del liblwp.a
+	del example1.exe
+	del example2.exe
+	del example3.exe
+	del example4.exe
+

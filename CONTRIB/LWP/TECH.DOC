@@ -1,0 +1,93 @@
+
+Multi-tasking is when the CPU runs one program, stops what its doing, and
+starts running another program.  When the CPU switches between
+programs really fast, it looks like both are running at the same time.
+
+Multi-threading is similar but different in that the CPU switches between
+code in the SAME program.  Each task shares the same DATA SPACE.  This
+brings up a problem that multitasking programs don't have to deal with:
+re-entrancy.
+
+Under a multitasking operating system, such as Linux, if you write a 
+program called hello, that does:  
+
+main()
+{
+	printf("hello, dude\n")
+}
+
+and run it 100 times, what happens is the OS sets aside a DATA space for
+each task.  Inside the each data space is a stack for each program, 
+and a copy of all the functions that the program uses.  In our
+example program, their would be a stack allocated for each task, and 100
+COPIES of the function printf.  If you get down to the nitty gritty of
+the machine level, when each task calls the printf function,  they call
+their own PRIVATE printf COPY. 
+
+
+Under multi-threading, each task has to SHARE those functions like 
+printf, since they do not get a copy of it.  They all share one copy.
+
+Because of that, each function under a multithreading system has to
+be written so that it is re-entrant, i.e. each function can be running
+more than once without hurting itself.  A function like strtok() is
+NOT re-entrant because it uses static/global variables.  
+
+Look how strtok works:
+
+The first time you call strtok(), you pass it a pointer to a string and 
+you pass it a string of delimiters.  It then returns a pointer to the 
+first token in that string.  The next time you call strtok, you pass it
+NULL, and it REMEMBERS the address of the string that you were using, and 
+gives you the second token. 
+
+This is what makes strtok() not re-entrant.  Since each thread in a
+multi-threading system has to SHARE a single copy of a function, what
+if thread A and thread B are both using strtok?   The internal pointers
+that strtok uses are sure to get corrupted.  What if thread A passes a
+pointer to strok, and then thread B passes NULL to strok?  Thread B
+will most likely get a token from something that's happening in thread A.
+Bad stuff.
+  
+
+When using LWP, you have to write your functions so that they are re-entrant,
+if you want multiple threads to be able to use that function.  Just keep
+in mind when you are writing your function that it may be running more
+than once at a time.  
+
+
+
+
+How LWP works:
+
+
+If you don't want to look through the source code to see how LWP works, 
+here's how:
+
+
+lwpInit() sets up all the initial structure for main()'s task.  A
+circular linked list is setup that holds info on which threads are 
+going to be executed.  Since their aren't any threads running yet, the
+list simply points to itself.  If the user called lwpYield() at this
+point, it simply yields to itself.  
+
+Yield works by pushing all the relevant register values onto the stack,
+switching to the next thread's stack, and poping off all the reg values.
+
+Lwp_spawn sets up the stack structure so that when the reg values are
+popped off the stack in lwpYield, the correct values are put in the
+registers.  It also puts the address of the spawned function on the stack 
+so that when yield returns it jumps to that function. 
+
+Under the pre-emptive version, SIGILL is raised periodically by the timer
+interrupt and the signal handler does the task switching.  The reason
+it's SIGILL is because of the way the exception handler works.  See
+$DJGPP/src/libc/go32/dpmiexcp.c  
+
+
+That's basically how it works.  Not much too it really.   
+
+
+Josh
+44699@ef.gc.maricopa.edu
+

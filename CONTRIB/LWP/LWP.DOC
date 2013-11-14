@@ -1,0 +1,446 @@
+LWP 2.0 Documentation.		December 19, 1997
+
+
+Disclaimer: THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY, IMPLIED
+OR OTHERWISE.   I make no promises that this software will even do what it
+is intended to do or claims to do.  USE AT YOUR OWN RISK.
+
+This software is provided to the public domain.  The only restriction is 
+that anything that is created using this software has to include a list
+of names (in the included "thanks" file) crediting the contributors to
+this software, as they have also contributed to your software.
+
+This library is NOT under the terms of the GNU General Public License.
+While I agree with the GNU General Public License for creating free
+software applications, I do not agree that it should be used on TOOLS that
+are used to create software applications.  Luckily for all of us DJGPP
+users, the people that put DJGPP together agree with me.  There wouldn't
+be kewl stuff like Quake if they didn't! :)
+
+
+If LWP is used in commercial software, please tell me about it, or
+better, send me a copy.  I'd be thrilled to see it in use. 
+
+
+Please, if you, as a developer, use LWP, donate one US dollar to
+
+	Josh Turpen
+	5210 N. 70th Ave.
+	Glendale, AZ 85303
+
+
+This library is not shareware, it's free.  You don't have to pay if you
+don't want to.  but come on, it's only one stinking dollar ;)  Just put 
+a dollar in an envelop and mail it here :).  If you do, I'll be able to 
+focus on making more kewl stuff instead of focusing on making ends meet
+like I do now.
+
+
+
+
+And now, the good stuff :)
+
+
+LWP is a library that gives you the ability to create pre-emptive
+multithreaded programs under the DJGPP development suite.  It's main
+attraction is it's ease of use.  There are only 3 functions that are
+vital, so even the multithreading newbies can get started quickly. 
+
+
+
+Functions:
+***************************************************************************
+
+int lwpInit(int speed, int priority)
+
+***************************************************************************
+
+This function starts the multithreading engine.  Once called, the
+program begins executing as a thread.  The 'speed' parameter is used for
+generating the rate of time-slicing.  
+
+The speeds available are:
+
+RTC2, RTC4, RTC8, RTC16, RTC32, RTC64, RTC128, RTC256, RTC512, RTC1024, 
+RTC2048, RTC4096, RTC8192 hertz.  
+
+The second arguement is the priority of the main() thread.  The lowest
+priority is one, and the main() thread can have as high of a priority as it
+wants. A thread with priority 2 gets twice as much CPU time as a thread
+with priority 1.  A thread with priority 3 gets three times as much CPU
+time as a thread with priority 1, and so on. 
+
+lwpInit returns TRUE if it was successful, otherwise FALSE.
+
+
+***************************************************************************
+
+int lwpSpawn(void (*proc)(void *), void *param, int stackSize, int priority,
+            int active) 
+
+***************************************************************************
+
+This function spawns new threads.  The first arguement is the address of
+a function of type "void function(void *)".  The thread terminates when
+this function returns.  
+
+The second arguement is the parameter to the function.  If your function 
+doesn't use a parameter, simply pass NULL.
+
+The third arguement is the size of the stack for the thread.  The stack
+size must be at least 256 bytes, for sanity reasons.  The amount of
+stack you need depends on the number of local variables your function
+uses.  Remember that any functions that you call in your thread also use
+this stack, and recursive functions use hefty amounts of stack.
+
+The forth arguement is the priority of the thread.  One is the lowest
+priority, and a thread can have as high of a priority as it wants.  A 
+thread with a priority of 2 gets twice as much CPU time as a thread of
+priority one.  A thread with priority 3 gets three times as much CPU
+time as a thread with priority one, and so on.
+
+The fifth arguement determines weather the thread is active or not.
+Passing TRUE makes the thread active, while passing FALSE makes the 
+thread suspended.  If you make it suspended, you can start it later
+using lwpThreadResume. 
+
+
+This function returns the process id of the thread, or FALSE if it
+failed.
+
+***************************************************************************
+
+int lwpKill(int lwpid)
+
+***************************************************************************
+
+This function kills a thread.  The arguement "lwpid" is the process id
+of the thread to kill. 
+
+This function returns TRUE if the kill was successful, otherwise FALSE.
+
+
+***************************************************************************
+
+int lwpGetpid(void)
+
+***************************************************************************
+
+This function returns the current threads process id.  
+
+This function always succeeds.
+
+
+***************************************************************************
+
+int lwpThreadCount(void)
+
+***************************************************************************
+
+This function returns the number of threads that have been created.
+
+This function always succeeds.
+
+
+***************************************************************************
+
+int lwpThreadSuspend(int lwpid)
+
+***************************************************************************
+
+This function suspends a thread's execution, causing it to sleep until
+it has been resumed with "lwpThreadResume".  A sleeping thread receives
+no CPU time.
+
+The arguement lwpid is the process id of the thread to suspend.
+
+This function returns TRUE if successful, FALSE otherwise.
+
+
+***************************************************************************
+
+int lwpThreadResume(int lwpid)
+
+***************************************************************************
+
+This function resumes a thread's execution, causing it to 'wake up'
+after being suspended with lwpThreadSuspend.
+
+The arguement lwpid is the process id of the thread to suspend.
+
+This function returns TRUE if successful, FALSE otherwise.
+
+
+***************************************************************************
+
+void lwpEnterCriticalSection(void)
+
+***************************************************************************
+
+This function disables taskswitching.  It is used when entering
+sensitive areas, such as non-reentrant functions like C standard library
+functions.
+
+
+***************************************************************************
+
+void lwpLeaveCriticalSection(void)
+
+***************************************************************************
+
+This function re-enables taskswitching.  It it used to resume task
+switching after leaving a sensitive area.
+
+
+***************************************************************************
+
+void lwpYield(void)
+
+***************************************************************************
+
+This functions causes the current thread to give up it's remaing CPU
+time and jump to the next thread.  It's useful in increasing
+responsiveness of the other threads running.
+
+
+
+
+***************************************************************************
+
+int lwpCreateSemaphore(void *lockaddr, int count)
+
+***************************************************************************
+
+This function creates a semaphore for the variable or function passed in
+by 'lockaddr'.  The parameter 'count' is the number of threads that are
+allowed access to the function/variable at the same time.
+
+This function returns TRUE when successful, FALSE otherwise.
+
+
+***************************************************************************
+
+int lwpDeleteSemaphore(void *lockaddr)
+
+***************************************************************************
+
+This function deletes the semaphore specified by 'lockaddr'.  Only the
+thread that created the semaphore may delete it.  If the thread that
+created the semaphore has terminated, then another thread may delete it.
+
+This function returns TRUE when successful, otherwise FALSE.
+
+
+***************************************************************************
+
+int lwpGetSemaphoreCount(void *lockaddr)
+
+***************************************************************************
+
+This function returns the number of threads allowed to access a
+semaphore specified by lockaddr, or FALSE if the semaphore does not
+exist.   
+
+Note: Calling lwpGetSemaphoreCount on an address that has been mutex'd 
+returns 1 (One thread allowed to access semaphore).
+
+***************************************************************************
+
+int lwpAdjustSemaphoreCount(void *lockaddr, int count)
+
+***************************************************************************
+
+This function is used to change the count value for a semaphore.  This
+function returns TRUE when successful, otherwise FALSE.
+
+Calling lwpAdjustSemaphoreCount with a value other than 1 for count on a
+mutex'd address changes the mutex into a semaphore.
+
+
+***************************************************************************
+
+int lwpLockSemaphore(void *lockaddr)
+
+***************************************************************************
+
+This function assumes control over the semaphore so that your thread may
+access it.  This function blocks, i.e. it will not return until it gains
+control of the semaphore.  Even though this function blocks, it safely
+(hopefully) avoids deadlocks.  
+
+This function returns TRUE when successful, otherwise FALSE.
+
+
+***************************************************************************
+
+int lwpReleaseSemaphore(void *lockaddr)
+
+***************************************************************************
+
+This function releases control of the semaphore so that other threads
+may access it.
+
+
+This function returns TRUE when successful, otherwise FALSE.
+
+
+
+***************************************************************************
+
+int lwpCreateMutex(void *lockaddr)
+
+***************************************************************************
+
+Same as lwpCreateSemaphore(lockaddr, 1)
+
+SEE lwpCreateSemaphore
+
+
+***************************************************************************
+
+int lwpDeleteMutex(void *lockaddr)
+
+***************************************************************************
+
+Same as lwpDeleteSemaphore(lockaddr)
+
+SEE lwpDeleteSemaphore
+
+
+***************************************************************************
+
+int lwpLockMutex(void *lockaddr)
+
+***************************************************************************
+
+Same as lwpLockSemaphore(lockaddr)
+
+SEE lwpLockSemaphore
+
+
+***************************************************************************
+
+int lwpReleaseMutex(void *lockaddr)
+
+***************************************************************************
+
+Same as lwpReleaseSemaphore(lockaddr)
+
+SEE also lwpReleaseSemaphore
+
+
+
+
+Programming Notes:
+
+
+
+The C library functions that come with DJGPP are not re-entrant.  You must 
+use lwpEnterCriticalSection and lwpLeaveCriticalSection or mutexes when 
+calling these functions.  There are a few functions that are re-entrant, 
+like kbhit(), but if you aren't sure, use critical sections or mutexes.  
+
+A function is re-entrant if it can be running more than once at the same
+time without disrupting itself.  Functions that use static variables are
+most likely not re-entrant, unless the static variables were used with
+re-entrancy in mind.
+
+Each thread runs in it's own machine state.  This state includes the ds,
+es, fs, and gs registers.  Functions that modify these registers must be
+called in each thread that uses them in order for them to work properly.
+For example, _farsetsel(int selector) loads the fs register with a
+selector.  Since each thread has it's own fs register, you must call
+_farsetsel in each thread that needs _farsetsel.  Three of the example
+programs demonstrate this.
+
+
+
+Known Problems:
+
+LWP 2.0 completely blows up under PMODE/DJ (Why!?!?!).
+
+I've discovered a problem with Win95, __dpmi_int and  ___djgpp_hw_exception. 
+This is not an LWP specific problem, but rather with Win 95 and the DJGPP 
+signal mechanism, which LWP uses.  I've included a file that hopefully
+fixes the problem, called dpmiint.S.  to use this file you must include
+it on your command line, i.e. 
+
+	gcc -o example1.exe example1.c liblwp.a dpmiint.S
+
+It must be included on the command line because it replaces the libc function
+ __dpmi_int in your program with its own fixed version.  It cannot be 
+included in the liblwp.a library because the linker will chose the one in 
+libc over the one in liblwp.a.  Otherwise I would have just included it in 
+the liblwp.a library.  IMO, always include the fixed dpmiint.S, since it 
+won't hurt under other DPMI providers.
+
+Hopefully this problem will be fixed in the DJGPP distribution.
+
+
+
+The semaphore/mutex code is very alpha, and probably not the most stable 
+code in the world.  Actually I'm not even sure my idea of a
+semaphore/mutex is what the rest of the world agrees with.  
+Please point out bugs/solutions/better ways to me. 
+
+
+Changes since LWP 1.3:
+
+
+A lot! 
+
+Numero uno:  Stability.  LWP 2.0 blows 1.3 away in stability, especially
+under windows.
+
+Segment registers are now saved, so you don't have to disable task
+switching in your rep movsd loops.  All of the bugs people sent me have
+been fixed, along with a few really nasty ones that only I caught. It's
+amazing 1.3 worked at all! 
+
+
+
+All of the functions have been renamed using a different scheme, since 
+I got tired of typing underscores.  I like neat looking code. :) Slack 
+is good! 
+
+
+LWP 2.0 now hooks both timers (IRQ0 and IRQ8) at the same time, chaining
+to the old handlers correctly.  LWP should work just fine with other
+libraries that hook the timer interrupts.  You can even run multiple dos
+boxes under Windows, eaching running LWP programs.  
+
+All of the modified C library header files are gone.  The more I thought
+about it, it seemed silly to masquarade libc as a re-entrant library.
+Also the modified header files didn't have all of the functions for that
+module, so printf might disable task switching, but fprintf wouldn't,
+even though they were both in <stdio.h>.  Now I require the user to do 
+the disabling for non-reentrant functions like printf.
+
+
+If you have written code that relies on the internal workings of LWP
+1.3, you are probably going to have to re-write a lot of it to work with
+the new version.  _lwp_enable is now "normal", i.e. setting it to 1
+enables tasks, 0 disables tasks.
+
+All of the sync functions (semaphores/mutexs) are new.
+
+
+To do:
+
+I've all but given up on a C++ class library.  I just don't have the
+time.  Maybe in the next version :)  (I said that last version).
+
+
+
+Enjoy!
+
+Josh Turpen
+44699@ef.gc.maricopa.edu
+
+p.s. Please send bug reports/fixes to the above address.  
+
+p.p.s.  My life long ambition, seriously, is to make videogames for a 
+living.  If you are a video game software house and you like LWP, I'm 
+very available :)
+
+
